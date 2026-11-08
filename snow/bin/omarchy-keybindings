@@ -1,0 +1,66 @@
+#!/bin/bash
+# Display keybindings in a terminal
+cat << 'HELP'
+╔═══════════════════════════════════════════════════════╗
+║              OMARCHY SNOW KEYBINDINGS                 ║
+╠═══════════════════════════════════════════════════════╣
+║                                                       ║
+║  APPS                                                 ║
+║  Super+Return        Terminal                         ║
+║  Super+Shift+Return  Browser (Firefox)                ║
+║  Super+Shift+B       Browser (Firefox)                ║
+║  Super+Shift+F       File Manager                     ║
+║  Super+Shift+A       AI Chat (aichat)                 ║
+║  Super+Alt+Return    Terminal (tmux)                  ║
+║  Super+Shift+T       System Monitor (btop)            ║
+║                                                       ║
+║  MENUS                                                ║
+║  Super+M             Main Menu                        ║
+║  Super+Space         App Launcher (fuzzel)            ║
+║  Super+Ctrl+Escape   System Menu                      ║
+║  Super+Ctrl+T        Theme Selector                   ║
+║  Super+Ctrl+A        Appearance Menu                  ║
+║  Super+Escape        Power Menu                       ║
+║  Super+/             This help                        ║
+║                                                       ║
+║  TILING (autotiling = dwindle-like quadrants)         ║
+║  Alt+Tab / Alt+Shift+Tab    Cycle windows             ║
+║  Super+H/J/K/L      Focus left/down/up/right         ║
+║  Super+Shift+H/J/K/L  Move window                    ║
+║  Super+B             Split horizontal                 ║
+║  Super+N             Split vertical                   ║
+║  Super+F             Fullscreen                       ║
+║  Super+V             Float/Tile toggle                ║
+║  Super+E             Toggle split layout              ║
+║  Super+Q / Super+W   Close window                    ║
+║                                                       ║
+║  WORKSPACES                                           ║
+║  Super+1-9           Switch workspace                 ║
+║  Super+Shift+1-9     Move window to workspace         ║
+║  Super+Tab           Next workspace                   ║
+║  Super+Shift+Tab     Previous workspace               ║
+║  Super+Minus         Show scratchpad                  ║
+║  Super+Shift+Minus   Move to scratchpad               ║
+║                                                       ║
+║  SYSTEM                                               ║
+║  Super+Ctrl+L        Lock screen                      ║
+║  Super+Shift+R       Reload Sway                      ║
+║  Print               Screenshot (full)                ║
+║  Super+Shift+S       Screenshot (region)              ║
+║  Super+Shift+Space   Toggle bar                       ║
+║  Super+Shift+Back    Toggle gaps                      ║
+║  XF86 keys           Volume/Brightness/Media          ║
+║                                                       ║
+║  BAR (top)                                            ║
+║  Click ☰             Main menu                        ║
+║  Click 🌐            Launch browser                   ║
+║  Click theme name    Theme selector                   ║
+║  Click volume        Volume control                   ║
+║  Click wifi          Network settings                 ║
+║  Click date/time     Calendar                         ║
+║  Click power icon    Power menu                       ║
+║  Right-click bar     Quick settings                   ║
+║                                                       ║
+╚═══════════════════════════════════════════════════════╝
+HELP
+read -p "Press Enter to close..."

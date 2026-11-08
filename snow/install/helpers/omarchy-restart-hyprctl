@@ -1,0 +1,49 @@
+#!/bin/bash
+# Sway stub for omarchy-restart-hyprctl
+# Called by omarchy-theme-set as a "visible_theme_command" 
+# Updates bar colors, sets wallpaper, and reloads sway
+
+THEME_PATH="$HOME/.local/state/omarchy/current/theme"
+COLORS="$THEME_PATH/colors.toml"
+SWAY_CONFIG="$HOME/.config/sway/config"
+
+# Update bar colors if colors.toml exists
+if [ -f "$COLORS" ]; then
+    get_color() {
+        grep "^$1" "$COLORS" 2>/dev/null | head -1 | sed "s/.*= *\"\(.*\)\"/\1/" | sed "s/#//"
+    }
+
+    BG=$(get_color "background")
+    FG=$(get_color "foreground")
+    ACCENT=$(get_color "accent")
+    MUTED=$(get_color "muted")
+    RED=$(get_color "red")
+
+    if [ -n "$BG" ]; then
+        BAR_BG="${BG}e6"
+        [ -z "$FG" ] && FG="a9b1d6"
+        [ -z "$ACCENT" ] && ACCENT="7aa2f7"
+        [ -z "$MUTED" ] && MUTED="414868"
+        [ -z "$RED" ] && RED="f7768e"
+
+        sed -i "/colors {/,/}/{
+            s/background #[0-9a-fA-F]*/background #${BAR_BG}/
+            s/statusline #[0-9a-fA-F]*/statusline #${FG}/
+            s/focused_workspace  .*/focused_workspace  #${ACCENT} #${ACCENT} #${BG}/
+            s/active_workspace   .*/active_workspace   #${MUTED} #${MUTED} #${FG}/
+            s/inactive_workspace .*/inactive_workspace #${BG}00 #${BG}00 #${MUTED}/
+            s/urgent_workspace   .*/urgent_workspace   #${RED} #${RED} #${BG}/
+        }" "$SWAY_CONFIG"
+    fi
+fi
+
+SWAY_SOCK=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+if [ -n "$SWAY_SOCK" ]; then
+    # Set wallpaper
+    WALL=$(readlink -f "$HOME/.local/state/omarchy/current/background" 2>/dev/null)
+    if [ -n "$WALL" ] && [ -f "$WALL" ]; then
+        SWAYSOCK="$SWAY_SOCK" swaymsg output "*" bg "$WALL" fill 2>/dev/null
+    fi
+    # Reload sway to pick up new bar colors
+    SWAYSOCK="$SWAY_SOCK" swaymsg reload 2>/dev/null
+fi

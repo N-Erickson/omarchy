@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ "$BLOCK_BUTTON" = "1" ]; then
+    S=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+    SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-power-menu >/dev/null 2>&1
+fi
+echo "󰐥"

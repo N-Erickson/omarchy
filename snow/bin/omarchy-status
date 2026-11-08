@@ -1,0 +1,49 @@
+#!/bin/bash
+echo '{"version":1,"click_events":true}'
+echo '['
+echo '[],'
+while true; do
+    WIFI=$(iwgetid -r 2>/dev/null || echo "off")
+    MEM=$(free | awk '/Mem:/{printf "%.0f%%", $3/$2*100}')
+    VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{v=int($2*100)} /MUTED/{v="mut"} {print v}')
+    BAT=""
+    for b in /sys/class/power_supply/sbs-*/capacity /sys/class/power_supply/BAT*/capacity; do
+        [ -f "$b" ] && { BAT=$(cat "$b"); break; }
+    done
+    THEME=$(cat ~/.local/state/omarchy/current/theme.name 2>/dev/null || echo "?")
+    DATE=$(date "+%a %b %d")
+    TIME=$(date "+%H:%M")
+    B='[{"name":"apps","full_text":" 󰀻 "},'
+    B+='{"name":"browser","full_text":" 󰖟 "},'
+    B+='{"name":"wifi","full_text":" 󰤨 '$WIFI' "},'
+    B+='{"name":"memory","full_text":" 󰍛 '$MEM' "},'
+    B+='{"name":"volume","full_text":" 󰕾 '$VOL' "},'
+    [ -n "$BAT" ] && B+='{"name":"battery","full_text":" 󰁹 '$BAT'% "},'
+    B+='{"name":"theme","full_text":" 󰏘 '$THEME' "},'
+    B+='{"name":"date","full_text":" 󰃶 '$DATE' "},'
+    B+='{"name":"time","full_text":" 󰅐 '$TIME' "},'
+    B+='{"name":"power","full_text":" 󰐥 "}],'
+    echo "$B"
+    sleep 10
+done &
+
+while IFS= read -r line; do
+    line="${line#,}"
+    [ -z "$line" ] && continue
+    [ "$line" = "[" ] && continue
+    name=$(echo "$line" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p')
+    [ -z "$name" ] && continue
+    S=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+    case "$name" in
+        apps)    SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-menu >/dev/null 2>&1 ;;
+        browser) SWAYSOCK="$S" swaymsg exec firefox >/dev/null 2>&1 ;;
+        wifi)    SWAYSOCK="$S" swaymsg exec "foot -T Network nmtui" >/dev/null 2>&1 ;;
+        memory)  SWAYSOCK="$S" swaymsg exec "foot -T btop -e btop" >/dev/null 2>&1 ;;
+        volume)  SWAYSOCK="$S" swaymsg exec "foot -T alsamixer -e alsamixer" >/dev/null 2>&1 ;;
+        battery) SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-system-menu >/dev/null 2>&1 ;;
+        theme)   SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-theme-selector >/dev/null 2>&1 ;;
+        date)    SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-calendar-menu >/dev/null 2>&1 ;;
+        time)    SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-calendar-menu >/dev/null 2>&1 ;;
+        power)   SWAYSOCK="$S" swaymsg exec ~/.local/bin/omarchy-power-menu >/dev/null 2>&1 ;;
+    esac
+done

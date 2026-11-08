@@ -1,0 +1,3 @@
+#!/bin/bash
+# Stub for Snow — no Chromium-based browsers to set policy for
+exit 0

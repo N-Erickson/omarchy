@@ -1,0 +1,282 @@
+#!/bin/bash
+# Omarchy Settings Menu — fuzzel-based replacement for Quickshell menu
+# Mirrors omarchy-menu.jsonc structure
+
+MENU_FONT="JetBrainsMono Nerd Font:size=11"
+FUZZEL_OPTS="-d -w 45 -l 15 --font=$MENU_FONT"
+
+show_menu() {
+    echo "$1" | fuzzel $FUZZEL_OPTS --prompt="$2 "
+}
+
+main_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Appearance" \
+        "  Apps" \
+        "  Setup" \
+        "  System" \
+        "  About" \
+        | show_menu "" "≡ ")
+
+    case "$choice" in
+        *Appearance*) appearance_menu ;;
+        *Apps*)       apps_menu ;;
+        *Setup*)      setup_menu ;;
+        *System*)     system_menu ;;
+        *About*)      about_menu ;;
+    esac
+}
+
+appearance_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "󰸌  Theme" \
+        "  Background" \
+        "  Font" \
+        "  Gaps" \
+        "  Borders" \
+        "  Back" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Theme*)      theme_menu ;;
+        *Background*) background_menu ;;
+        *Font*)       font_menu ;;
+        *Gaps*)       gaps_menu ;;
+        *Borders*)    borders_menu ;;
+        *Back*)       main_menu ;;
+    esac
+}
+
+theme_menu() {
+    local themes current choice
+    current=$(cat ~/.local/state/omarchy/current/theme.name 2>/dev/null || echo "unknown")
+    themes=$(ls /usr/share/omarchy/themes/ 2>/dev/null)
+
+    if [ -z "$themes" ]; then
+        notify-send "No themes found" "Install themes to /usr/share/omarchy/themes/"
+        return
+    fi
+
+    local menu_items=""
+    while IFS= read -r t; do
+        if [ "$t" = "$current" ]; then
+            menu_items+="● $t (current)\n"
+        else
+            menu_items+="  $t\n"
+        fi
+    done <<< "$themes"
+
+    choice=$(printf "$menu_items" | show_menu "" "󰸌 ")
+
+    if [ -n "$choice" ]; then
+        local theme_name
+        theme_name=$(echo "$choice" | sed 's/^[● ] //' | sed 's/ (current)$//')
+        if [ -n "$theme_name" ] && [ "$theme_name" != "$current" ]; then
+            omarchy theme set "$theme_name" 2>&1 | head -5
+            notify-send "Theme" "Applied: $theme_name" 2>/dev/null
+        fi
+    fi
+}
+
+background_menu() {
+    local bgs choice
+    bgs=$(ls ~/.local/share/omarchy/backgrounds/ 2>/dev/null)
+    if [ -z "$bgs" ]; then
+        notify-send "Backgrounds" "No backgrounds found"
+        return
+    fi
+    choice=$(echo "$bgs" | show_menu "" " ")
+    if [ -n "$choice" ]; then
+        swaymsg output '*' bg "$HOME/.local/share/omarchy/backgrounds/$choice" fill
+        notify-send "Background" "Set to: $choice" 2>/dev/null
+    fi
+}
+
+font_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "JetBrainsMono Nerd Font (default)" \
+        "Fira Code Nerd Font" \
+        "Cascadia Mono Nerd Font" \
+        "Meslo LG Nerd Font" \
+        | show_menu "" " ")
+
+    if [ -n "$choice" ]; then
+        local font_name
+        font_name=$(echo "$choice" | sed 's/ (default)//')
+        notify-send "Font" "Selected: $font_name (restart terminal to apply)" 2>/dev/null
+    fi
+}
+
+gaps_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "None (0/0)" \
+        "Tight (2/2)" \
+        "Default (5/10)" \
+        "Spacious (8/16)" \
+        "Ultra (12/24)" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *None*)     swaymsg gaps inner all set 0; swaymsg gaps outer all set 0 ;;
+        *Tight*)    swaymsg gaps inner all set 2; swaymsg gaps outer all set 2 ;;
+        *Default*)  swaymsg gaps inner all set 5; swaymsg gaps outer all set 10 ;;
+        *Spacious*) swaymsg gaps inner all set 8; swaymsg gaps outer all set 16 ;;
+        *Ultra*)    swaymsg gaps inner all set 12; swaymsg gaps outer all set 24 ;;
+    esac
+}
+
+borders_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "None" \
+        "1px" \
+        "2px (default)" \
+        "3px" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *None*)    swaymsg default_border none ;;
+        *1px*)     swaymsg default_border pixel 1 ;;
+        *2px*)     swaymsg default_border pixel 2 ;;
+        *3px*)     swaymsg default_border pixel 3 ;;
+    esac
+}
+
+apps_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Terminal" \
+        "  Firefox" \
+        "  Files" \
+        "  System Monitor" \
+        "  Network" \
+        "  Back" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Terminal*)       foot & ;;
+        *Firefox*)        firefox & ;;
+        *Files*)          foot -T Files -e sh -c 'cd ~ && ls -la && exec bash' & ;;
+        *System\ Monitor*) foot -T Monitor -e btop & ;;
+        *Network*)        foot -T Network -e nmtui & ;;
+        *Back*)           main_menu ;;
+    esac
+}
+
+setup_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Network" \
+        "  Default Agent" \
+        "  Default Browser" \
+        "  Default Editor" \
+        "  Git Config" \
+        "  Security" \
+        "  Back" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Network*)        foot -T Network -e nmtui & ;;
+        *Default\ Agent*) agent_menu ;;
+        *Default\ Browser*) browser_menu ;;
+        *Default\ Editor*)  editor_menu ;;
+        *Git\ Config*)    foot -T "Git Setup" -e bash -c 'omarchy-setup-git 2>/dev/null || (echo "Configure git:"; read -p "Name: " name; read -p "Email: " email; git config --global user.name "$name"; git config --global user.email "$email"; echo "Done!"; sleep 2)' & ;;
+        *Security*)       security_menu ;;
+        *Back*)           main_menu ;;
+    esac
+}
+
+agent_menu() {
+    local current choice
+    current=$(omarchy-default-agent 2>/dev/null || echo "claude")
+
+    choice=$(printf '%s\n' \
+        "claude$([ "$current" = "claude" ] && echo " (current)")" \
+        "codex$([ "$current" = "codex" ] && echo " (current)")" \
+        "copilot$([ "$current" = "copilot" ] && echo " (current)")" \
+        "grok$([ "$current" = "grok" ] && echo " (current)")" \
+        "opencode$([ "$current" = "opencode" ] && echo " (current)")" \
+        | show_menu "" " ")
+
+    if [ -n "$choice" ]; then
+        local agent
+        agent=$(echo "$choice" | sed 's/ (current)//')
+        omarchy-default-agent "$agent" 2>/dev/null
+        notify-send "Default Agent" "Set to: $agent" 2>/dev/null
+    fi
+}
+
+browser_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Firefox" \
+        "  Chromium" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Firefox*)  omarchy-default-browser firefox 2>/dev/null; notify-send "Browser" "Default: Firefox" 2>/dev/null ;;
+        *Chromium*) omarchy-default-browser chromium 2>/dev/null; notify-send "Browser" "Default: Chromium" 2>/dev/null ;;
+    esac
+}
+
+editor_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Nano" \
+        "  Vim" \
+        "  Helix" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Nano*)  export EDITOR=nano; notify-send "Editor" "Default: nano" 2>/dev/null ;;
+        *Vim*)   export EDITOR=vim; notify-send "Editor" "Default: vim" 2>/dev/null ;;
+        *Helix*) export EDITOR=helix; notify-send "Editor" "Default: helix" 2>/dev/null ;;
+    esac
+}
+
+security_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "󰣀  SSH Config" \
+        "󰟵  Passwordless Sudo" \
+        "  Back" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *SSH*)              foot -T "SSH Config" -e bash -c 'omarchy-setup-security-sshd 2>/dev/null || (echo "SSH Config"; cat ~/.ssh/config 2>/dev/null || echo "No SSH config"; exec bash)' & ;;
+        *Passwordless*)     notify-send "Sudo" "Already configured: NOPASSWD" 2>/dev/null ;;
+        *Back*)             setup_menu ;;
+    esac
+}
+
+system_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "  Lock Screen" \
+        "  Logout" \
+        "  Reboot" \
+        "  Shutdown" \
+        "  Back" \
+        | show_menu "" " ")
+
+    case "$choice" in
+        *Lock*)     swaylock -f -c 1a1b26 ;;
+        *Logout*)   swaymsg exit ;;
+        *Reboot*)   systemctl reboot ;;
+        *Shutdown*) systemctl poweroff ;;
+        *Back*)     main_menu ;;
+    esac
+}
+
+about_menu() {
+    local version
+    version=$(omarchy version 2>/dev/null || echo "4.0.0")
+    notify-send "Omarchy Snow" "Version: $version\nSway compositor\nSamsung Chromebook XE303C12\nExynos 5250 · 2GB RAM\n\nhttps://omarchy.com" 2>/dev/null
+    foot -T "About Omarchy" -e bash -c "fastfetch; echo; echo 'Omarchy Snow $version'; echo 'Sway + Wayland on Samsung Chromebook XE303C12'; echo; read -p 'Press Enter to close...'" &
+}
+
+main_menu

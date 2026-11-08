@@ -1,0 +1,95 @@
+#!/bin/bash
+# Omarchy System Menu — comprehensive system control panel
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+
+# Gather system info
+MEM=$(free -h | awk '/Mem:/{print $3"/"$2}')
+DISK=$(df -h / | awk 'NR==2{print $3"/"$2}')
+CPU_TEMP=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null | awk '{printf "%.0f°C", $1/1000}')
+UPTIME=$(uptime -p 2>/dev/null | sed 's/up //')
+BATTERY=""
+if [ -f /sys/class/power_supply/sbs-20-000b/capacity ]; then
+    BAT_PCT=$(cat /sys/class/power_supply/sbs-20-000b/capacity)
+    BAT_STATUS=$(cat /sys/class/power_supply/sbs-20-000b/status 2>/dev/null)
+    BATTERY="Battery: ${BAT_PCT}% (${BAT_STATUS})"
+fi
+
+CHOICE=$(printf "%s\n" \
+    "System Information" \
+    "---" \
+    "Memory: $MEM" \
+    "Disk: $DISK" \
+    "Temp: $CPU_TEMP" \
+    "Up: $UPTIME" \
+    "$BATTERY" \
+    "---" \
+    "System Monitor (btop)" \
+    "File Manager" \
+    "Network Settings" \
+    "Bluetooth" \
+    "Volume Control" \
+    "Display Brightness" \
+    "---" \
+    "Theme Selector" \
+    "Appearance" \
+    "Settings" \
+    "---" \
+    "Terminal" \
+    "Browser" \
+    "AI Chat" \
+    "---" \
+    "Reload Sway" \
+    "Lock Screen" \
+    "Power Menu" \
+    | grep -v "^---$" \
+    | grep -v "^$" \
+    | fuzzel -d -w 45 -l 18 --font="JetBrainsMono Nerd Font:size=11" --prompt="System> ")
+
+case "$CHOICE" in
+    "System Monitor (btop)")
+        swaymsg exec 'foot -T "btop" -e btop'
+        ;;
+    "File Manager")
+        swaymsg exec nautilus
+        ;;
+    "Network Settings")
+        swaymsg exec 'foot -T "Network" nmtui'
+        ;;
+    "Bluetooth")
+        swaymsg exec 'foot -T "Bluetooth" -e bluetoothctl'
+        ;;
+    "Volume Control")
+        exec ~/.local/bin/omarchy-volume-menu
+        ;;
+    "Display Brightness")
+        LEVEL=$(printf "%s\n" "10%" "25%" "50%" "75%" "100%" | fuzzel -d -w 25 -l 5 --font="JetBrainsMono Nerd Font:size=11" --prompt="Bright> ")
+        [ -n "$LEVEL" ] && brightnessctl set "$LEVEL"
+        ;;
+    "Theme Selector")
+        exec ~/.local/bin/omarchy-theme-selector
+        ;;
+    "Appearance")
+        exec ~/.local/bin/omarchy-appearance-menu
+        ;;
+    "Settings")
+        exec ~/.local/bin/omarchy-settings-menu
+        ;;
+    "Terminal")
+        swaymsg exec foot
+        ;;
+    "Browser")
+        swaymsg exec firefox
+        ;;
+    "AI Chat")
+        swaymsg exec 'foot -T "AI Chat" -e aichat'
+        ;;
+    "Reload Sway")
+        swaymsg reload
+        ;;
+    "Lock Screen")
+        swaylock
+        ;;
+    "Power Menu")
+        exec ~/.local/bin/omarchy-power-menu
+        ;;
+esac

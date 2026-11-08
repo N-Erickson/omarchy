@@ -1,0 +1,35 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+SOCK=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+
+ACTION=$(printf "%s\n" \
+    "Volume (alsamixer)" \
+    "Browser" \
+    "Terminal" \
+    "System Menu" \
+    "Theme Selector" \
+    "Background" \
+    "Calendar" \
+    "Network" \
+    "Bluetooth" \
+    "System Monitor" \
+    "File Manager" \
+    "AI Chat" \
+    "Power" \
+    | fuzzel -d -w 35 -l 13 --font="JetBrainsMono Nerd Font:size=11" --prompt="> ")
+
+case "$ACTION" in
+    "Volume (alsamixer)") SWAYSOCK="$SOCK" swaymsg exec "foot -T alsamixer -e alsamixer" ;;
+    "Browser (Netsurf)")            SWAYSOCK="$SOCK" swaymsg exec firefox ;;
+    "Terminal")           SWAYSOCK="$SOCK" swaymsg exec foot ;;
+    "System Menu")        exec ~/.local/bin/omarchy-system-menu ;;
+    "Theme Selector")     exec ~/.local/bin/omarchy-theme-selector ;;
+    "Background")         exec ~/.local/bin/omarchy-background-picker ;;
+    "Calendar")           exec ~/.local/bin/omarchy-calendar-menu ;;
+    "Network")            SWAYSOCK="$SOCK" swaymsg exec "foot -T Network nmtui" ;;
+    "Bluetooth")          SWAYSOCK="$SOCK" swaymsg exec "foot -T Bluetooth -e bluetoothctl" ;;
+    "System Monitor")     SWAYSOCK="$SOCK" swaymsg exec "foot -T btop -e btop" ;;
+    "File Manager")       SWAYSOCK="$SOCK" swaymsg exec nautilus ;;
+    "AI Chat")            SWAYSOCK="$SOCK" swaymsg exec "foot -T AI Chat -e aichat" ;;
+    "Power")              exec ~/.local/bin/omarchy-power-menu ;;
+esac

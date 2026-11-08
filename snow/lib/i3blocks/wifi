@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ "$BLOCK_BUTTON" = "1" ]; then
+    S=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+    SWAYSOCK="$S" swaymsg exec "foot -T Network nmtui" >/dev/null 2>&1
+fi
+echo "󰤨 $(iwgetid -r 2>/dev/null || echo off)"

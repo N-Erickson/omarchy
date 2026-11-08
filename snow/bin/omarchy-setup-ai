@@ -1,0 +1,33 @@
+#!/bin/bash
+echo "Installing AI coding harnesses for Omarchy Snow..."
+echo ""
+
+echo "[1/4] aichat (native ARM) — already installed"
+which aichat && aichat --version
+
+echo ""
+echo "[2/4] Installing @kilocode/cli (Kilo Code - pure JS agent)..."
+npm install -g @kilocode/cli 2>&1 | tail -3
+
+echo ""
+echo "[3/4] Installing command-code (CommandCode - pure JS agent)..."
+npm install -g command-code 2>&1 | tail -3
+
+echo ""
+echo "[4/4] Installing @anthropic-ai/claude-code (may not work on ARM)..."
+npm install -g @anthropic-ai/claude-code 2>&1 | tail -3
+
+echo ""
+echo "=== Installed agents ==="
+echo "Available AI coding tools:"
+which aichat && echo "  aichat (native ARM - chat, shell assistant, RAG, agents)"
+which kilo && echo "  kilo (Kilo Code)"
+which commandcode && echo "  commandcode (CommandCode)"
+which claude && echo "  claude (Claude Code - may need x86_64)"
+echo ""
+echo "Set your API keys:"
+echo "  export ANTHROPIC_API_KEY=sk-ant-..."
+echo "  export OPENAI_API_KEY=sk-..."
+echo "  aichat --model claude:claude-sonnet-4-20250514"
+echo ""
+echo "Done! Use 'omarchy agent' to select your default agent."

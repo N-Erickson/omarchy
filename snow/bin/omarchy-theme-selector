@@ -1,0 +1,46 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+export OMARCHY_PATH=${OMARCHY_PATH:-/usr/share/omarchy}
+export PATH="$OMARCHY_PATH/bin:$PATH"
+
+# Get themes — use omarchy theme list (title-cased names)
+THEMES=$(omarchy theme list 2>/dev/null)
+if [ -z "$THEMES" ]; then
+    # Fallback: read directories and title-case them
+    THEMES=""
+    for d in /usr/share/omarchy/themes/*/; do
+        [ -d "$d" ] || continue
+        name=$(basename "$d")
+        # Convert kebab-case to Title Case
+        title=$(echo "$name" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')
+        THEMES+="$title"$'\n'
+    done
+fi
+[ -z "$THEMES" ] && exit 1
+
+# Get current theme directory name
+CURRENT_DIR=$(cat ~/.local/state/omarchy/current/theme.name 2>/dev/null || echo "")
+# Convert to title case for comparison
+CURRENT_TITLE=$(echo "$CURRENT_DIR" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')
+
+DISPLAY_LIST=""
+while IFS= read -r t; do
+    [ -z "$t" ] && continue
+    if [ "$t" = "$CURRENT_TITLE" ]; then
+        DISPLAY_LIST+="● $t"$'\n'
+    else
+        DISPLAY_LIST+="  $t"$'\n'
+    fi
+done <<< "$THEMES"
+
+CHOICE=$(printf "%s" "$DISPLAY_LIST" | fuzzel -d -w 40 -l 20 --font="JetBrainsMono Nerd Font:size=11" --prompt="Theme> ")
+[ -z "$CHOICE" ] && exit 0
+
+# Strip the prefix marker
+THEME_NAME=$(echo "$CHOICE" | sed 's/^[● ] *//')
+[ -z "$THEME_NAME" ] && exit 0
+
+# Don't re-apply current theme
+[ "$THEME_NAME" = "$CURRENT_TITLE" ] && exit 0
+
+omarchy theme set "$THEME_NAME"

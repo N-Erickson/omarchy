@@ -1,0 +1,36 @@
+#!/bin/bash
+show() {
+    clear
+    local vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null)
+    local pct=$(echo "$vol" | awk "{printf \"%.0f\", \$2 * 100}")
+    local muted=""
+    echo "$vol" | grep -q MUTED && muted=" [MUTED]"
+    local filled=$((pct / 5))
+    local empty=$((20 - filled))
+    local bar=""
+    for i in $(seq 1 $filled); do bar+="█"; done
+    for i in $(seq 1 $empty); do bar+="░"; done
+    echo ""
+    echo "  Volume: ${pct}%${muted}"
+    echo ""
+    echo "  ${bar}"
+    echo ""
+    echo "  ←/→ adjust   m mute   q quit"
+}
+show
+while true; do
+    read -rsn1 key
+    case "$key" in
+        q) exit ;;
+        m) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+        $\033)
+            read -rsn2 arrow
+            case "$arrow" in
+                "[D") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+                "[C") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ ;;
+                "[A") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ ;;
+                "[B") wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+            esac ;;
+    esac
+    show
+done

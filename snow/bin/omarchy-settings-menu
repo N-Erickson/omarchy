@@ -1,0 +1,31 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+ACTION=$(printf "%s\n" "Network" "Bluetooth" "Audio" "Brightness" "Display" "Power Info" "Theme" "About Omarchy" \
+    | fuzzel -d -w 40 -l 8 --font="JetBrainsMono Nerd Font:size=11" --prompt="Settings> ")
+case "$ACTION" in
+    Network)    swaymsg exec "foot -T Network -e nmtui" ;;
+    Bluetooth)  swaymsg exec "foot -T Bluetooth -e bluetoothctl" ;;
+    Audio)      swaymsg exec "foot -T Audio -e alsamixer" ;;
+    Brightness)
+        LEVEL=$(printf "%s\n" "100%" "75%" "50%" "25%" "10%" \
+            | fuzzel -d -w 30 -l 5 --font="JetBrainsMono Nerd Font:size=11" --prompt="Bright> ")
+        [ -n "$LEVEL" ] && brightnessctl set "$LEVEL"
+        ;;
+    Display)
+        SCALE=$(printf "%s\n" "1x (native)" "1.25x" "1.5x" "0.75x" \
+            | fuzzel -d -w 30 -l 4 --font="JetBrainsMono Nerd Font:size=11" --prompt="Scale> ")
+        case "$SCALE" in
+            1x*)   swaymsg output LVDS-1 scale 1 ;;
+            1.25*) swaymsg output LVDS-1 scale 1.25 ;;
+            1.5*)  swaymsg output LVDS-1 scale 1.5 ;;
+            0.75*) swaymsg output LVDS-1 scale 0.75 ;;
+        esac
+        ;;
+    *Power*)
+        swaymsg exec "foot -T Power -e bash -c 'echo Battery:; cat /sys/class/power_supply/sbs-104-000b/uevent 2>/dev/null || echo N/A; echo; echo Memory:; free -h; echo; echo Disk:; df -h /; echo; echo Uptime:; uptime; echo; read -p \"Press Enter...\"'"
+        ;;
+    Theme) ~/.local/bin/omarchy-theme-selector ;;
+    *About*)
+        swaymsg exec "foot -T \"About Omarchy\" -e bash -c 'fastfetch 2>/dev/null; echo; echo Omarchy Snow 4.0.0; echo Sway on Samsung Chromebook XE303C12; echo; read -p \"Press Enter...\"'"
+        ;;
+esac

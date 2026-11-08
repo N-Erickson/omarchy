@@ -1,0 +1,54 @@
+#!/bin/bash
+# Omarchy Calendar Menu — interactive calendar with month navigation
+
+YEAR=$(date +%Y)
+MONTH=$(date +%m)
+DAY=$(date +%d)
+
+show_calendar() {
+    local y=$1 m=$2
+    local month_name=$(date -d "$y-$m-01" +%B 2>/dev/null || date -j -f "%Y-%m-%d" "$y-$m-01" +%B 2>/dev/null)
+
+    rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+
+    local cal_output=$(cal $m $y 2>/dev/null)
+    local today_marker=""
+    if [ "$y" = "$(date +%Y)" ] && [ "$m" = "$(date +%m)" ]; then
+        today_marker=" (today: $DAY)"
+    fi
+
+    CHOICE=$(printf "%s\n" \
+        "$month_name $y$today_marker" \
+        "---" \
+        "$cal_output" \
+        "---" \
+        "<< Previous Month" \
+        ">> Next Month" \
+        "Today" \
+        | grep -v "^---$" \
+        | fuzzel -d -w 40 -l 14 --font="JetBrainsMono Nerd Font:size=11" --prompt="Cal> ")
+
+    case "$CHOICE" in
+        "<< Previous Month")
+            m=$((10#$m - 1))
+            if [ $m -lt 1 ]; then
+                m=12
+                y=$((y - 1))
+            fi
+            show_calendar $y $(printf "%02d" $m)
+            ;;
+        ">> Next Month")
+            m=$((10#$m + 1))
+            if [ $m -gt 12 ]; then
+                m=1
+                y=$((y + 1))
+            fi
+            show_calendar $y $(printf "%02d" $m)
+            ;;
+        "Today")
+            show_calendar $(date +%Y) $(date +%m)
+            ;;
+    esac
+}
+
+show_calendar $YEAR $MONTH

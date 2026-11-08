@@ -1,0 +1,20 @@
+// Performance tweaks for 2GB ARM
+user_pref("browser.cache.disk.capacity", 51200);
+user_pref("browser.cache.memory.capacity", 16384);
+user_pref("browser.sessionhistory.max_entries", 10);
+user_pref("browser.sessionstore.interval", 60000);
+user_pref("browser.tabs.animate", false);
+user_pref("browser.display.show_image_placeholders", false);
+user_pref("content.notify.interval", 750000);
+user_pref("gfx.webrender.all", false);
+user_pref("layers.acceleration.disabled", true);
+user_pref("media.hardware-video-decoding.enabled", false);
+user_pref("network.prefetch-next", false);
+user_pref("network.dns.disablePrefetch", true);
+user_pref("network.http.pipelining", true);
+user_pref("network.http.max-connections", 32);
+user_pref("dom.ipc.processCount", 2);
+user_pref("browser.low_commit_space_threshold_mb", 256);
+user_pref("javascript.options.mem.gc_incremental_slice_ms", 20);
+user_pref("image.mem.decode_bytes_at_a_time", 16384);
+user_pref("toolkit.cosmeticAnimations.enabled", false);

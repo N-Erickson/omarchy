@@ -1,0 +1,19 @@
+#!/bin/bash
+SOCK=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+# Focus existing volume window or open new one
+existing=$(SWAYSOCK="$SOCK" swaymsg -t get_tree 2>/dev/null | python3 -c "
+import json,sys
+def find(node, title):
+    if node.get('name','') == title: return node.get('id')
+    for n in node.get('nodes',[])+node.get('floating_nodes',[]):
+        r = find(n, title)
+        if r: return r
+tree = json.load(sys.stdin)
+print(find(tree, 'Volume') or '')
+" 2>/dev/null)
+
+if [ -n "$existing" ]; then
+    SWAYSOCK="$SOCK" swaymsg "[con_id=$existing]" focus 2>/dev/null
+else
+    SWAYSOCK="$SOCK" swaymsg exec 'foot -T "Volume" -W 60x8 -e pulsemixer' 2>/dev/null
+fi

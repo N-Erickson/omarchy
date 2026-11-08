@@ -1,0 +1,10 @@
+[Unit]
+Description=Restore ALSA mixer for Snow MAX98095
+After=sound.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/alsactl restore
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+#!/bin/bash
+# Wrapper for AI agents on armv7h — not all have ARM builds
+AGENT=${1:-$(omarchy-default-agent 2>/dev/null || echo "claude")}
+
+case "$AGENT" in
+    claude)
+        if command -v claude &>/dev/null; then
+            exec claude "${@:2}"
+        else
+            echo "Claude Code is not available for ARM v7 (this Chromebook)."
+            echo "Use SSH to connect from a machine with Claude Code installed:"
+            echo "  ssh omarchy@$(hostname -I | awk {print })"
+            echo ""
+            echo "Available local agents: dsh, kilo, commandcode"
+            echo "Set default: omarchy-default-agent <name>"
+        fi
+        ;;
+    *)
+        if command -v "$AGENT" &>/dev/null; then
+            exec "$AGENT" "${@:2}"
+        else
+            echo "Agent  not found. Trying to install via npm..."
+            npm install -g "$AGENT" 2>/dev/null && exec "$AGENT" "${@:2}"
+            echo "Could not install . Available agents:"
+            echo "  dsh (DeepSeek), kilo (Kilo Code), commandcode"
+        fi
+        ;;
+esac

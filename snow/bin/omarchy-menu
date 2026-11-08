@@ -1,0 +1,147 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+
+run_fuzzel() {
+    fuzzel -d -w 45 -l 15 --font="JetBrainsMono Nerd Font:size=11" --prompt="$1"
+}
+
+main_menu() {
+    CHOICE=$(printf "%s\n" \
+        "Apps" \
+        "Learn" \
+        "Appearance" \
+        "Trigger" \
+        "Setup" \
+        "System" \
+        "About" \
+        | run_fuzzel "> ")
+
+    case "$CHOICE" in
+        "Apps")       apps_menu ;;
+        "Learn")      learn_menu ;;
+        "Appearance") appearance_menu ;;
+        "Trigger")    trigger_menu ;;
+        "Setup")      setup_menu ;;
+        "System")     exec ~/.local/bin/omarchy-system-menu ;;
+        "About")      swaymsg exec "foot -T 'About Omarchy' -e bash -c 'fastfetch; echo; echo \"Omarchy Snow 4.0.0\"; echo \"Samsung Chromebook XE303C12\"; echo \"Sway $(sway --version | awk \"{print \\$3}\")\"; echo; read -p \"Press Enter...\"'" ;;
+    esac
+}
+
+apps_menu() {
+    CHOICE=$(printf "%s\n" \
+        "Terminal" \
+        "Browser (Light)" \
+        "Browser (Firefox)" \
+        "File Manager" \
+        "Text Editor" \
+        "System Monitor" \
+        "AI Chat" \
+        "Tmux Session" \
+        "Music (mpv)" \
+        "Image Viewer (imv)" \
+        | run_fuzzel "Apps> ")
+
+    case "$CHOICE" in
+        "Terminal")         swaymsg exec foot ;;
+"Browser (Light)") swaymsg exec "firefox --safe-mode" ;;
+        "Browser (Firefox)") swaymsg exec firefox ;;
+        "File Manager")     swaymsg exec nautilus ;;
+        "Text Editor")      swaymsg exec 'foot -T "Editor" -e nano' ;;
+        "System Monitor")   swaymsg exec 'foot -T "btop" -e btop' ;;
+        "AI Chat")          swaymsg exec 'foot -T "AI Chat" -e aichat' ;;
+        "Tmux Session")     swaymsg exec 'foot -e tmux' ;;
+        "Music (mpv)")      swaymsg exec 'foot -T "Music" -e bash -c "echo \"Drag files to play or: mpv <file>\"; read"' ;;
+        "Image Viewer (imv)") swaymsg exec imv ;;
+    esac
+}
+
+learn_menu() {
+    CHOICE=$(printf "%s\n" \
+        "Keybindings" \
+        "Omarchy Manual" \
+        "Arch Wiki" \
+        "Bash Reference" \
+        "Tmux Keybindings" \
+        "Sway Manual" \
+        "Community (Discord)" \
+        | run_fuzzel "Learn> ")
+
+    case "$CHOICE" in
+        "Keybindings")      exec ~/.local/bin/omarchy-keybindings ;;
+        "Omarchy Manual")   swaymsg exec 'firefox https://omarchy.org/manual/' ;;
+        "Arch Wiki")        swaymsg exec 'firefox https://wiki.archlinux.org/title/Main_page' ;;
+        "Bash Reference")   swaymsg exec 'firefox https://devhints.io/bash' ;;
+        "Tmux Keybindings") swaymsg exec 'foot -T "Tmux Keys" -e bash -c "tmux list-keys | less"' ;;
+        "Sway Manual")      swaymsg exec 'firefox https://man.archlinux.org/man/sway.5' ;;
+        "Community (Discord)") swaymsg exec 'firefox https://discord.gg/omarchy' ;;
+    esac
+}
+
+appearance_menu() {
+    CURRENT_ALPHA=$(grep "^alpha=" ~/.config/foot/foot.ini 2>/dev/null | head -1 | cut -d= -f2)
+    [ -z "$CURRENT_ALPHA" ] && CURRENT_ALPHA="1.0"
+
+    CHOICE=$(printf "%s\n" \
+        "Theme" \
+        "Background" \
+        "Transparency (${CURRENT_ALPHA})" \
+        "Toggle Gaps" \
+        "Toggle Bar" \
+        "Font Size" \
+        | run_fuzzel "Appearance> ")
+
+    case "$CHOICE" in
+        "Theme")        exec ~/.local/bin/omarchy-theme-selector ;;
+        "Background")   exec ~/.local/bin/omarchy-background-picker ;;
+        Transparency*)
+            ALPHA=$(printf "%s\n" "Off (1.0)" "Light (0.95)" "Medium (0.90)" "Heavy (0.80)" "Max (0.70)" | run_fuzzel "Alpha> ")
+            case "$ALPHA" in
+                "Off (1.0)")    NEW_ALPHA="1.0" ;;
+                "Light (0.95)") NEW_ALPHA="0.95" ;;
+                "Medium (0.90)") NEW_ALPHA="0.90" ;;
+                "Heavy (0.80)") NEW_ALPHA="0.80" ;;
+                "Max (0.70)")   NEW_ALPHA="0.70" ;;
+                *) exit 0 ;;
+            esac
+            sed -i "s/^alpha=.*/alpha=$NEW_ALPHA/" ~/.config/foot/foot.ini
+            THEME_FOOT="$HOME/.local/state/omarchy/current/theme/foot.ini"
+            [ -f "$THEME_FOOT" ] && sed -i "s/^alpha=.*/alpha=$NEW_ALPHA/" "$THEME_FOOT"
+            TPL="/usr/share/omarchy/default/themed/foot.ini.tpl"
+            [ -f "$TPL" ] && sudo sed -i "s/^alpha=.*/alpha=$NEW_ALPHA/" "$TPL"
+            for pid in $(pgrep -x foot); do kill -SIGUSR1 "$pid" 2>/dev/null; done
+            ;;
+        "Toggle Gaps")  swaymsg gaps inner current toggle 5, gaps outer current toggle 10 ;;
+        "Toggle Bar")   swaymsg bar mode toggle ;;
+        "Font Size")
+            SIZE=$(printf "%s\n" "8" "9" "10" "11" "12" | run_fuzzel "Size> ")
+            if [ -n "$SIZE" ]; then
+                sed -i "s/^font=.*/font=JetBrainsMono Nerd Font:size=$SIZE/" /home/omarchy/.config/foot/foot.ini
+                for pid in $(pgrep -x foot); do kill -SIGUSR1 "$pid" 2>/dev/null; done
+            fi
+            ;;
+    esac
+}
+
+trigger_menu() {
+    CHOICE=$(printf "%s\n" \
+        "Screenshot (Full)" \
+        "Screenshot (Region)" \
+        "Color Picker" \
+        | run_fuzzel "Trigger> ")
+
+    case "$CHOICE" in
+        "Screenshot (Full)")   grim ~/screenshot-$(date +%Y%m%d-%H%M%S).png ;;
+        "Screenshot (Region)") grim -g "$(slurp)" ~/screenshot-$(date +%Y%m%d-%H%M%S).png ;;
+        "Color Picker")
+            COLOR=$(grim -g "$(slurp -p)" -t ppm - | convert - -format '%[pixel:p{0,0}]' info:- 2>/dev/null)
+            [ -n "$COLOR" ] && echo "$COLOR" | wl-copy
+            ;;
+    esac
+}
+
+setup_menu() {
+    exec ~/.local/bin/omarchy-settings-menu
+}
+
+
+main_menu

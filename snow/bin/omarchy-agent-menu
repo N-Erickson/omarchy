@@ -1,0 +1,26 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+
+AGENTS=""
+which aichat >/dev/null 2>&1 && AGENTS="${AGENTS}aichat\n"
+which claude >/dev/null 2>&1 && AGENTS="${AGENTS}claude\n"
+which kilo >/dev/null 2>&1 && AGENTS="${AGENTS}kilo\n"
+which commandcode >/dev/null 2>&1 && AGENTS="${AGENTS}commandcode\n"
+
+if [ -z "$AGENTS" ]; then
+    AGENTS="aichat\nSetup AI agents"
+fi
+
+CHOICE=$(printf "$AGENTS" | fuzzel -d -w 40 -l 10 --font="JetBrainsMono Nerd Font:size=11" --prompt="Agent> ")
+
+case "$CHOICE" in
+    "Setup AI agents")
+        swaymsg exec "foot -T 'AI Setup' -e ~/.local/bin/omarchy-setup-ai"
+        ;;
+    "")
+        exit 0
+        ;;
+    *)
+        swaymsg exec "foot -T '$CHOICE' -e $CHOICE"
+        ;;
+esac

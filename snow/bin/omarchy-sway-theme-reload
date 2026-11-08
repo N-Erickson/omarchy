@@ -1,0 +1,12 @@
+#!/bin/bash
+# Fix foot theme section header (template generates [colors-dark], foot needs [colors])
+FOOT_THEME="$HOME/.local/state/omarchy/current/theme/foot.ini"
+if [ -f "$FOOT_THEME" ]; then
+    sed -i "s/^\[colors-dark\]/[colors]/" "$FOOT_THEME"
+fi
+
+# Reload sway
+SWAY_SOCK=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+if [ -n "$SWAY_SOCK" ]; then
+    SWAYSOCK="$SWAY_SOCK" swaymsg reload
+fi

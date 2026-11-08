@@ -1,0 +1,11 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+choice=$(printf "%s\n" "Lock" "Logout" "Reboot" "Shutdown" "Suspend" \
+    | fuzzel -d -w 30 -l 6 --font="JetBrainsMono Nerd Font:size=12" --prompt="Power> ")
+case "$choice" in
+    Lock)     swaylock -f -c 1a1b26 ;;
+    Logout)   swaymsg exit ;;
+    Reboot)   systemctl reboot ;;
+    Shutdown) systemctl poweroff ;;
+    Suspend)  systemctl suspend ;;
+esac

@@ -1,0 +1,45 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+
+THEMES_DIR="/usr/share/omarchy/themes"
+CURRENT_THEME=$(cat ~/.local/state/omarchy/current/theme.name 2>/dev/null || echo "unknown")
+
+# Build list: "theme-name / wallpaper-filename"
+BG_LIST=""
+for theme_dir in "$THEMES_DIR"/*/; do
+    [ -d "$theme_dir" ] || continue
+    theme=$(basename "$theme_dir")
+    bg_dir="$theme_dir/backgrounds"
+    [ -d "$bg_dir" ] || continue
+
+    for bg in "$bg_dir"/*.webp "$bg_dir"/*.jpg "$bg_dir"/*.png; do
+        [ -f "$bg" ] || continue
+        fname=$(basename "$bg")
+        # Skip tiny omarchy.webp logo files and intro dirs
+        [ "$fname" = "omarchy.webp" ] && continue
+        if [ "$theme" = "$CURRENT_THEME" ]; then
+            BG_LIST+="● $theme / $fname"$'\n'
+        else
+            BG_LIST+="  $theme / $fname"$'\n'
+        fi
+    done
+done
+
+[ -z "$BG_LIST" ] && { echo "No backgrounds found"; exit 1; }
+
+CHOICE=$(printf "%s" "$BG_LIST" | fuzzel -d -w 55 -l 20 --font="JetBrainsMono Nerd Font:size=10" --prompt="Wallpaper> ")
+[ -z "$CHOICE" ] && exit 0
+
+# Parse "● theme / filename" or "  theme / filename"
+THEME_NAME=$(echo "$CHOICE" | sed 's/^[● ] *//' | cut -d'/' -f1 | sed 's/ *$//')
+BG_FILE=$(echo "$CHOICE" | cut -d'/' -f2 | sed 's/^ *//')
+
+FULL_PATH="$THEMES_DIR/$THEME_NAME/backgrounds/$BG_FILE"
+[ -f "$FULL_PATH" ] || exit 1
+
+# Update the background symlink
+ln -sf "$FULL_PATH" "$HOME/.local/state/omarchy/current/background"
+
+# Apply wallpaper
+SWAY_SOCK=$(find /run/user/$(id -u) -name "sway-ipc.*" -type s 2>/dev/null | head -1)
+[ -n "$SWAY_SOCK" ] && SWAYSOCK="$SWAY_SOCK" swaymsg output "*" bg "$FULL_PATH" fill

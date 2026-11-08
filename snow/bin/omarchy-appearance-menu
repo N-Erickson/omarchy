@@ -1,0 +1,11 @@
+#!/bin/bash
+rm -f /run/user/$(id -u)/fuzzel-wayland-*.lock 2>/dev/null
+ACTION=$(printf "%s\n" "Change Theme" "Gaps: Increase" "Gaps: Decrease" "Gaps: None" "Toggle Top Bar" \
+    | fuzzel -d -w 40 -l 5 --font="JetBrainsMono Nerd Font:size=11" --prompt="Appearance> ")
+case "$ACTION" in
+    *Theme*)    ~/.local/bin/omarchy-theme-selector ;;
+    *Increase*) swaymsg gaps inner all plus 2; swaymsg gaps outer all plus 4 ;;
+    *Decrease*) swaymsg gaps inner all minus 2; swaymsg gaps outer all minus 4 ;;
+    *None*)     swaymsg gaps inner all set 0; swaymsg gaps outer all set 0 ;;
+    *Toggle*)   swaymsg bar mode toggle ;;
+esac
